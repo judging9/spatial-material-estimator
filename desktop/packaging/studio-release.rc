@@ -1,0 +1,29 @@
+#pragma code_page(65001)
+#include <windows.h>
+1 ICON "studio-release.ico"
+1 VERSIONINFO
+FILEVERSION 1,3,0,0
+PRODUCTVERSION 1,3,0,0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE 0
+BEGIN
+ BLOCK "StringFileInfo"
+ BEGIN
+  BLOCK "080404b0"
+  BEGIN
+   VALUE "FileDescription", "空间材料估算\0"
+   VALUE "ProductName", "空间材料估算\0"
+   VALUE "FileVersion", "1.3.0\0"
+   VALUE "ProductVersion", "1.3.0\0"
+   VALUE "InternalName", "PlanMatter\0"
+   VALUE "OriginalFilename", "空间材料估算.exe\0"
+  END
+ END
+ BLOCK "VarFileInfo"
+ BEGIN
+  VALUE "Translation", 0x804, 1200
+ END
+END

@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "asset": "furniture-original.json",
+  "sha256": "67a803e0d05c7dde9195e45fb31825320600622b537708f4f075651245e5cbbb",
+  "bytes": 209557,
+  "generator": "Blender 5.2.3 LTS",
+  "generatorScript": "scripts/generate_furniture_assets.py",
+  "source": "Original procedural furniture designs; no third-party model files",
+  "license": "CC0-1.0",
+  "modelStats": {
+    "sofa": {
+      "faces": 286,
+      "triangles": 484,
+      "preview": "furniture/sofa.svg"
+    },
+    "bed": {
+      "faces": 234,
+      "triangles": 396,
+      "preview": "furniture/bed.svg"
+    },
+    "table": {
+      "faces": 130,
+      "triangles": 220,
+      "preview": "furniture/table.svg"
+    },
+    "chair": {
+      "faces": 156,
+      "triangles": 264,
+      "preview": "furniture/chair.svg"
+    },
+    "cabinet": {
+      "faces": 156,
+      "triangles": 264,
+      "preview": "furniture/cabinet.svg"
+    },
+    "custom": {
+      "faces": 26,
+      "triangles": 44,
+      "preview": "furniture/custom.svg"
+    },
+    "nightstand": {
+      "faces": 260,
+      "triangles": 440,
+      "preview": "furniture/nightstand.svg"
+    },
+    "wardrobe": {
+      "faces": 156,
+      "triangles": 264,
+      "preview": "furniture/wardrobe.svg"
+    }
+  },
+  "sourceBlend": "development_assets/furniture-presets.blend"
+}

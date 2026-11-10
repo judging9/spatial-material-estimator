@@ -1,0 +1,103 @@
+import { MUNICIPAL_PRESETS, municipalPreset, isMunicipalSurface, isMunicipalLayered, municipalEffectiveWidth, municipalBridgeQuantities } from './lib/municipal-design.js';
+import { findMunicipalCatalogPreset } from './lib/municipal-catalog.js';
+import { renderUrbanCatalog, assetSymbol } from './municipal-authoring.js';
+import { renderMunicipalOptions } from './municipal-workflow.js';
+import { renderSiteElevation, updateSiteElevation } from './site-placement.js';
+import { escape, icon, measure, money } from './ui.js';
+const labels = { road: '道路', paving: '场地铺装', pipeline: '室外管线', manhole: '检查井', streetlight: '路灯', green: '绿地', kerb: '路缘石', intersection: '路口', roundabout: '环岛', trafficlight: '信号灯', river: '河流', bridge: '桥梁', facility: '城市设施', fence: '沿线护栏' };
+const pathKinds = ['road', 'pipeline', 'kerb', 'river', 'bridge', 'fence'];
+const areaKinds = ['paving', 'green'];
+export function municipalSymbol(kind) {
+    const shapes = {
+        road: '<path d="M8 40 18 8h12l10 32H8Z"/><path d="M24 10v6m0 5v7m0 5v5"/>',
+        facility: '<rect x="9" y="10" width="30" height="28" rx="2"/><path d="M16 18h16M16 25h16M16 32h5m6 0h5"/>',
+        fence: '<path d="M7 40V8m11 32V8m12 32V8m11 32V8M7 17h34M7 31h34"/>',
+        paving: '<path d="m6 18 18-10 18 10-18 22L6 18Z"/><path d="m12 14 18 19M18 11l18 15M11 24l18-12M17 31l18-12"/>',
+        pipeline: '<path d="M7 34h12V14h22M7 27h5V7h29"/><ellipse cx="41" cy="10.5" rx="3" ry="3.5"/>',
+        manhole: '<ellipse cx="24" cy="12" rx="14" ry="6"/><path d="M10 12v24c0 8 28 8 28 0V12M18 8l12 8m0-8-12 8"/>',
+        streetlight: '<path d="M20 42V12c0-6 17-6 17 0v4M14 42h12M30 16h14l-3-5h-8l-3 5Z"/>',
+        green: '<path d="M24 40V25M17 40h14"/><path d="M24 6c-12 9-18 20-11 23 5 2 8-1 11-4 3 3 6 6 11 4 7-3 1-14-11-23Z"/>',
+        kerb: '<path d="m5 24 30-14 8 5-30 16-8-7Zm0 0v9l8 7 30-17v-8M13 31v9"/>',
+        intersection: '<path d="M18 4h12v14h14v12H30v14H18V30H4V18h14V4Z"/><path d="M24 5v8m11 11h8M24 35v8M5 24h8"/>',
+        roundabout: '<circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="7"/><path d="M18 4v6m12-6v6m14 8h-6m6 12h-6M18 44v-6m12 6v-6M4 18h6m-6 12h6"/>',
+        trafficlight: '<rect x="16" y="4" width="16" height="32" rx="4"/><circle cx="24" cy="11" r="3"/><circle cx="24" cy="20" r="3"/><circle cx="24" cy="29" r="3"/><path d="M24 36v8M17 44h14"/>',
+        river: '<path d="M15 4c-16 14 18 19 5 40M30 4c-16 14 18 19 5 40M7 14h5m18 12h5M17 38h5"/>',
+        bridge: '<path d="M4 22h40M4 28h40M10 28v15m28-15v15M4 22l6-12 28 0 6 12M10 10v12m28-12v12M16 10v12m8-12v12m8-12v12"/>'
+    };
+    return `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shapes[kind] || shapes.road}</svg>`;
+}
+export function renderMunicipalLeft(project, selected, quote, filter = 'all', search = '', catalogGroup = 'all') {
+    const elements = project.municipalElements || [], presets = MUNICIPAL_PRESETS.filter(p => !['facility', 'fence'].includes(p.kind) && (filter === 'all' || (filter === 'roads' ? ['road', 'paving', 'kerb', 'intersection', 'roundabout', 'bridge', 'trafficlight'].includes(p.kind) : filter === 'networks' ? ['pipeline', 'manhole'].includes(p.kind) : ['streetlight', 'green', 'river'].includes(p.kind))));
+    return `<section class="panel-section municipal-intro"><span class="eyebrow">Municipal design</span><h2>画出场地，算清预算</h2><p class="help">选择车道和路口预设，画河流、放桥梁，再填写实际价格。工程量由图形计算。</p><button class="button subtle full" data-action="quick-municipal">${icon('ruler', 15)}按尺寸添加</button></section>
+    <section class="panel-section municipal-library"><div class="section-head"><h3>市政设施</h3><span class="chip">${presets.length}</span></div><div class="municipal-categories">${[['all', '全部'], ['roads', '道路'], ['networks', '管网'], ['landscape', '景观']].map(([id, name]) => `<button data-municipal-category="${id}" class="${id === filter ? 'active' : ''}" aria-pressed="${id === filter}">${name}</button>`).join('')}</div><div class="municipal-presets">${presets.map(p => `<button class="municipal-preset" data-draw-municipal="${p.kind}" aria-label="绘制${labels[p.kind]}"><span>${municipalSymbol(p.kind)}</span><strong>${labels[p.kind]}</strong><small>${pathKinds.includes(p.kind) ? '点击画中心线' : areaKinds.includes(p.kind) ? '圈选施工范围' : '点击放置'}</small></button>`).join('')}</div></section>
+    ${renderUrbanCatalog(search, catalogGroup)}
+    <section class="panel-section"><div class="section-head"><h3>场地项目</h3><span class="chip">${elements.length}</span></div>${elements.map(item => { const row = quote.municipalElements?.find(row => row.id === item.id), catalog = findMunicipalCatalogPreset(item.catalogId); return `<div class="area-row${selected === item.id ? ' active' : ''}${item.hidden ? ' is-hidden' : ''}"><button class="area-select" data-action="select-municipal" data-id="${escape(item.id)}"><span class="municipal-list-symbol">${catalog ? assetSymbol(catalog.symbol) : municipalSymbol(item.kind)}</span><span class="area-text"><span class="area-title">${escape(item.name)}</span><span class="area-meta">${row?.netQuantity === null ? '待校准' : measure(Number(row?.netQuantity ?? 0), 3)} ${escape(item.unit)}${item.locked ? ' · 已锁定' : ''}</span></span></button><div class="area-actions"><button class="icon-button" data-action="toggle-municipal" data-id="${escape(item.id)}" aria-label="${item.hidden ? '显示' : '隐藏'}${escape(item.name)}">${icon(item.hidden ? 'eyeOff' : 'eye', 14)}</button><button class="icon-button" data-action="delete-municipal" data-id="${escape(item.id)}" aria-label="删除${escape(item.name)}">${icon('trash', 14)}</button></div></div>`; }).join('') || '<p class="help muted">从一段道路开始，也可直接输入已知尺寸。</p>'}<div class="stat-row municipal-known"><span class="muted">已填写金额（税前）</span><strong>¥ ${money(quote.knownSubtotal)}</strong></div></section>`;
+}
+export function renderMunicipalGuide(project, quote) {
+    return `<section class="municipal-guide"><div class="municipal-guide-mark">${municipalSymbol('road')}</div><span class="eyebrow">Site to estimate</span><h2>从一个简单场地开始</h2><p>选择起步预设，自动生成道路和设施；也可画中心线、放路口，再调整真实尺寸。</p><div class="municipal-guide-steps"><div><span>01</span><strong>绘制范围</strong><small>路线、面域与单点设施</small></div><div><span>02</span><strong>确定尺寸</strong><small>路宽、厚度、直径与标高</small></div><div><span>03</span><strong>填写价格</strong><small>材料、人工、损耗与固定费</small></div></div><button class="button primary full" data-action="municipal-start">用场地预设开始</button><button class="button subtle full spaced" data-action="quick-municipal">按尺寸添加单项</button>${!project.calibration.metersPerPixel ? '<button class="button subtle full spaced" data-action="calibrate-drawing">校准已有图纸</button>' : ''}<div class="municipal-guide-total"><span>已填写金额（税前）</span><strong>¥ ${money(quote.knownSubtotal)}</strong><small>${quote.municipalElements?.length || 0} 项设施</small></div><p class="help">市政预算按场地项目独立汇总，包含你填写的结构层和税费。</p></section>`;
+}
+export function renderMunicipalInspector(project, item, row) {
+    const disabled = item.locked ? 'disabled' : '', path = pathKinds.includes(item.kind), area = areaKinds.includes(item.kind), pipe = item.kind === 'pipeline', fixture = ['manhole', 'streetlight', 'trafficlight', 'facility'].includes(item.kind), surface = isMunicipalSurface(item.kind), layered = isMunicipalLayered(item.kind);
+    const field = (key, label, unit, value, attrs = '') => `<label class="item-field"><span class="field-label">${label}</span><span class="input-affix"><input id="municipal-${key}" data-municipal-field="${key}" type="number" value="${escape(value)}" ${attrs}><span>${unit}</span></span></label>`;
+    const metrics = row?.metrics || row?.measurements || row || {};
+    const catalog = findMunicipalCatalogPreset(item.catalogId);
+    return `<section class="panel-section inspector-identity"><div class="section-head"><span class="eyebrow">Municipal inspector</span><span class="chip">${escape(catalog?.name ?? labels[item.kind])}</span></div><label class="field-label" for="municipal-name">项目名称</label><input id="municipal-name" class="inspector-name" data-municipal-field="name" value="${escape(item.name)}" maxlength="120"><div class="municipal-preview">${catalog ? assetSymbol(catalog.symbol) : municipalSymbol(item.kind)}</div>${project.drawing?.type === 'plan' ? `<button class="button subtle full spaced" data-action="focus-municipal">${icon('fit', 14)}${item.kind === 'trafficlight' ? '在三维中查看灯头' : '在三维中定位查看'}</button>` : ''}</section>
+    <section class="panel-section"><div class="section-head"><h3>尺寸与位置</h3><label class="municipal-lock"><input id="municipal-locked" type="checkbox" ${item.locked ? 'checked' : ''}>${icon(item.locked ? 'lock' : 'unlock', 14)}锁定</label></div><div class="field-grid">${!area ? field('width', pipe ? '管道外径' : ['streetlight', 'trafficlight'].includes(item.kind) ? '灯杆直径' : item.kind === 'river' ? '水面宽度' : '宽度', 'cm', municipalEffectiveWidth(item), `min="1" step="any" ${disabled} ${item.roadLayout ? 'disabled' : ''}`) : ''}${fixture || item.kind === 'kerb' || pipe || item.kind === 'river' ? field('depth', pipe ? '管沟宽度' : item.kind === 'river' ? '河深' : item.kind === 'streetlight' ? '灯臂尺寸' : '深度', 'cm', item.depth, `min="1" step="any" ${disabled}`) : ''}${field('height', pipe ? '管沟深度' : surface && item.kind !== 'river' ? '主层厚度' : item.kind === 'river' ? '河岸显示厚度' : '高度 / 深度', 'cm', item.height, `min="0.1" step="any" ${disabled}`)}${field('elevation', pipe ? '管线中心标高' : item.kind === 'river' ? '水面标高' : surface ? '顶面标高' : '底标高', 'cm', item.elevation, `step="any" ${disabled}`)}</div><p class="help">${item.locked ? '几何已锁定，价格仍可修改。' : '选中后拖动节点调整路线或边界，也可输入准确坐标。'}尺寸用厘米，节点位置相对于图纸原点。</p><details class="municipal-nodes"><summary>${path ? '路线节点' : area ? '范围顶点' : '设施位置'} · ${item.points.length}</summary>${item.points.map((point, index) => `<div class="municipal-node"><span>${String(index + 1).padStart(2, '0')}</span>${['x', 'y', ...(pipe ? ['z'] : [])].map(axis => `<label><span>${axis.toUpperCase()} cm</span><input data-municipal-point="${index}" data-municipal-axis="${axis}" type="number" step="any" value="${axis === 'z' ? point.z ?? 0 : (point[axis] * (project.calibration.metersPerPixel ?? .01) * 100)}" ${disabled}></label>`).join('')}${item.points.length > (area ? 3 : 2) && path ? `<button class="icon-button" data-action="remove-municipal-point" data-point="${index}" ${disabled} aria-label="删除节点${index + 1}">${icon('trash', 12)}</button>` : ''}</div>`).join('')}</details></section>
+    ${renderSiteElevation(project, item)}${renderMunicipalOptions(item, project)}<section class="panel-section"><div class="section-head"><h3>实际工程量</h3></div>${[['netArea', '施工净面积', 'm²'], ['length', pipe ? '三维路径长度' : '中心线长度', 'm'], ['volume', '主层体积', 'm³']].filter(([key]) => key === 'netArea' ? surface : key === 'length' ? path : !fixture && item.kind !== 'pipeline').map(([key, label, unit]) => `<div class="stat-row"><span>${label}</span><strong data-municipal-stat="${key}">${measure(metrics[key] ?? null, 3)} ${unit}</strong></div>`).join('')}<p id="municipal-quantity-note" class="help">${escape((row?.warnings || []).join(' ') || '用量按实际轮廓计算，缩放画布不会改变结果。')}</p></section>
+    <section class="panel-section"><div class="section-head"><h3>主项报价</h3></div><label class="item-field"><span class="field-label">计价单位</span><select id="municipal-unit" ${fixture ? 'disabled' : ''}>${municipalPreset(item.kind).units.map(unit => `<option value="${unit}" ${unit === item.unit ? 'selected' : ''}>${unit === 'm²' ? '按施工面积' : unit === 'm³' ? '按主层体积' : unit === 'm' ? '按实际长度' : '按设施数量'} · ${unit}</option>`).join('')}</select></label>${fixture ? field('quantity', '同规格数量', '件', item.quantity, 'min="1" step="1"') : ''}<div class="field-grid spaced">${field('unitPrice', '材料单价', `元/${item.unit}`, item.unitPrice, 'min="0" step="any" placeholder="待填写"')}${field('wasteRate', '采购损耗', '%', item.wasteRate, 'min="0" step="any"')}${field('laborRate', '施工人工', `元/${item.unit}`, item.laborRate, 'min="0" step="any"')}${field('additionalCost', '本项固定费', '元', item.additionalCost, 'min="0" step="any"')}</div><p class="help">空白单价表示待填写，明确填写 0 为有效报价。人工按净工程量计算。</p></section>
+    ${layered ? `<section class="panel-section municipal-layers"><div class="section-head"><h3>附加结构层</h3><button class="icon-button" data-action="add-municipal-layer" ${disabled} title="添加结构层">${icon('plus', 15)}</button></div><p class="help">主项可用作路面；基层、垫层分别添加，厚度与材料费独立计算。</p>${(item.items || []).map(layer => `<div class="municipal-layer" data-layer="${escape(layer.id)}"><div class="municipal-layer-head"><input data-municipal-layer="${escape(layer.id)}" data-municipal-layer-field="name" value="${escape(layer.name)}" aria-label="结构层名称"><button class="icon-button" data-action="remove-municipal-layer" data-id="${escape(layer.id)}" ${disabled} aria-label="删除结构层">${icon('trash', 13)}</button></div><div class="field-grid">${[['thickness', '厚度', 'cm'], ['unitPrice', '材料单价', `元/${layer.unit}`], ['wasteRate', '损耗', '%'], ['laborRate', '施工人工', `元/${layer.unit}`], ['additionalCost', '固定费用', '元']].map(([key, label, unit]) => `<label class="item-field"><span class="field-label">${label}</span><span class="input-affix"><input type="number" data-municipal-layer="${escape(layer.id)}" data-municipal-layer-field="${key}" value="${escape(layer[key])}" min="${key === 'thickness' ? '.1' : '0'}" step="any" ${key === 'thickness' ? disabled : ''} ${key === 'unitPrice' ? 'placeholder="待填写"' : ''}><span>${unit}</span></span></label>`).join('')}<label class="item-field"><span class="field-label">计量依据</span><select data-municipal-layer="${escape(layer.id)}" data-municipal-layer-field="unit"><option value="m³" ${layer.unit === 'm³' ? 'selected' : ''}>体积 m³</option><option value="m²" ${layer.unit === 'm²' ? 'selected' : ''}>面积 m²</option></select></label></div></div>`).join('') || '<p class="help muted">点击 + 添加基层或垫层。</p>'}</section>` : ''}
+    <div class="property-total"><div class="stat-row"><span>主项净工程量</span><strong data-municipal-stat="netQuantity">${row?.netQuantity === null ? '待校准' : measure(Number(row?.netQuantity ?? 0), 3)} ${item.unit}</strong></div><div class="stat-row"><span>主项采购用量</span><strong data-municipal-stat="purchaseQuantity">${row?.purchaseQuantity === null ? '待校准' : measure(Number(row?.purchaseQuantity ?? 0), 3)} ${item.unit}</strong></div>${[['materialCost', '材料费（含结构层）'], ['laborCost', '人工费'], ['additionalCost', '固定费用']].map(([key, label]) => `<div class="stat-row"><span>${label}</span><strong data-municipal-stat="${key}">¥ ${money(row?.pending ? (key === 'materialCost' ? row?.knownMaterialCost : key === 'laborCost' ? row?.knownLaborCost : row?.[key]) : row?.[key])}</strong></div>`).join('')}<div class="stat-row"><span>${row?.pending ? '已填写小计（税前）' : '本项小计'}</span><strong data-municipal-stat="total">¥ ${money(row?.pending ? row?.knownTotal : row?.total)}</strong></div><p id="municipal-price-state">${row?.pending ? escape(row.pendingReason) : '材料 + 人工 + 附加结构层 + 固定费用'}</p></div><section class="panel-section"><div class="municipal-inspector-actions"><button class="button subtle" data-action="duplicate-municipal">${icon('copy', 14)}复制设施</button><button class="button subtle" data-action="delete-municipal" data-id="${escape(item.id)}">${icon('trash', 14)}删除</button></div></section>`;
+}
+export function updateMunicipalNumbers(project, item, row) {
+    updateSiteElevation(project, item);
+    const metrics = row?.metrics || row?.measurements || row || {};
+    for (const input of document.querySelectorAll('[data-municipal-option]')) {
+        if (document.activeElement === input || input.type === 'checkbox')
+            continue;
+        const value = item[input.dataset.municipalOption]?.[input.dataset.optionField];
+        if (value !== undefined)
+            input.value = String(value);
+    }
+    if (item.kind === 'bridge') {
+        const quantities = municipalBridgeQuantities(item, project);
+        for (const [key, value, unit] of [['pier', quantities.pierCount, '件'], ['railing', quantities.railingLength, 'm']]) {
+            const node = document.querySelector('[data-bridge-quantity="' + key + '"]');
+            if (node)
+                node.textContent = '净量 ' + measure(value, 2) + ' ' + unit;
+        }
+    }
+    for (const key of ['width', 'depth', 'height', 'elevation']) {
+        const input = document.querySelector('#municipal-' + key);
+        if (input && document.activeElement !== input)
+            input.value = String(key === 'width' ? municipalEffectiveWidth(item) : item[key]);
+    }
+    for (const key of ['netArea', 'length', 'volume', 'netQuantity', 'purchaseQuantity']) {
+        const node = document.querySelector('[data-municipal-stat="' + key + '"]');
+        if (node) {
+            const value = ['netQuantity', 'purchaseQuantity'].includes(key) ? row?.[key] : metrics[key];
+            node.textContent = (value === null ? '待校准' : measure(Number(value ?? 0), 3)) + ' ' + (['netQuantity', 'purchaseQuantity'].includes(key) ? item.unit : key === 'length' ? 'm' : key === 'volume' ? 'm³' : 'm²');
+        }
+    }
+    for (const key of ['materialCost', 'laborCost', 'additionalCost', 'total']) {
+        const node = document.querySelector('[data-municipal-stat="' + key + '"]');
+        if (node)
+            node.textContent = '¥ ' + money(row?.pending ? (key === 'total' ? row?.knownTotal : key === 'materialCost' ? row?.knownMaterialCost : key === 'laborCost' ? row?.knownLaborCost : row?.[key]) : row?.[key]);
+    }
+    for (const input of document.querySelectorAll('[data-municipal-point]')) {
+        if (document.activeElement === input)
+            continue;
+        const point = item.points[Number(input.dataset.municipalPoint)];
+        if (!point)
+            continue;
+        const axis = input.dataset.municipalAxis;
+        input.value = String(Number((axis === 'z' ? point.z ?? 0 : point[axis] * (project.calibration.metersPerPixel ?? .01) * 100).toFixed(4)));
+    }
+    const status = document.querySelector('#municipal-price-state');
+    if (status)
+        status.textContent = row?.pending ? row.pendingReason : '材料 + 人工 + 附加结构层 + 固定费用';
+    const note = document.querySelector('#municipal-quantity-note');
+    if (note)
+        note.textContent = (row?.warnings || []).join(' ') || '用量按实际轮廓计算，缩放画布不会改变结果。';
+}
+export { showMunicipalQuickCreate } from './municipal-quick-create.js';
+//# sourceMappingURL=municipal-panel.js.map

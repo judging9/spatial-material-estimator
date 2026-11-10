@@ -1,0 +1,27 @@
+.scene-terrain-controls{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line,#dce5d7)}
+.scene-terrain-controls[hidden]{display:none}
+/* Keyboard focus changes the navigation label. A stable panel width keeps
+   the terrain buttons under the pointer throughout focus/blur and clicks. */
+.scene-navigation{width:280px;box-sizing:border-box}
+.scene-navigation-head{gap:8px}
+.scene-navigation-toggle{min-width:100px}
+.scene-navigation-speed{min-width:0}
+.scene-navigation-speed select{min-width:0;max-width:120px}
+.scene-terrain-label{font-size:9px;color:var(--muted,#74816f);white-space:nowrap}
+.scene-terrain-segments{display:flex;gap:2px;margin-left:auto;padding:2px;background:#f3f5ef;border:1px solid #e6ebe1;border-radius:6px}
+.scene-terrain-segments button{min-width:44px;min-height:24px;padding:2px 8px;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--muted,#74816f);font-size:10px;line-height:1.4;transition:background .12s ease,color .12s ease,border-color .12s ease}
+.scene-terrain-segments button:hover{color:var(--ink,#36443d);background:#e9eee3}
+.scene-terrain-segments button[aria-pressed=true]{border-color:#d4dfcf;background:#fff;color:var(--accent,#286850);font-weight:600}
+.scene-terrain-segments button:focus-visible{outline:1px solid var(--accent,#286850);outline-offset:2px}
+.scene-terrain-segments button:disabled{opacity:.5;cursor:default}
+.scene-inspection-controls{margin-top:8px;padding-top:8px;border-top:1px solid var(--line,#dce5d7)}
+.scene-inspection-controls[hidden]{display:none}
+.scene-inspection-summary{margin:0 0 6px;font-size:10px;color:var(--ink,#36443d);font-variant-numeric:tabular-nums}
+.scene-inspection-actions{display:flex;gap:6px}
+.scene-inspection-actions button{flex:1;min-width:0;padding:5px 8px;border:1px solid #dce5d7;border-radius:5px;background:#fff;color:var(--ink,#36443d);font-size:11px;line-height:1.4;white-space:nowrap}
+.scene-inspection-actions button:first-child{flex:1.5;color:var(--accent,#286850);border-color:#c9d8c8;background:#f5f8f2}
+.scene-inspection-actions button:hover{background:#edf2e8;border-color:#c6d4c1}
+.scene-inspection-actions button:focus-visible{outline:1px solid var(--accent,#286850);outline-offset:2px}
+.scene-inspection-actions button:disabled{opacity:.4;cursor:default}
+.scene-inspection-note{margin:5px 0 0;font-size:9px;line-height:1.4;color:var(--muted,#74816f);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:700px){.scene-terrain-controls{gap:6px}.scene-terrain-segments button{min-width:40px;padding:2px 6px}}

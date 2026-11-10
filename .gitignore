@@ -1,0 +1,54 @@
+# Installed dependencies and local caches
+node_modules/
+.venv/
+venv/
+.npm-cache/
+__pycache__/
+.thumbnails/
+*.py[cod]
+
+# Build output and local acceptance evidence
+/build/
+/artifacts/
+
+# Windows deliveries belong in GitHub Releases
+/release/
+*.zip
+
+# Private projects, drawings, material databases, and runtime logs
+/data/
+/examples/
+/desktop/data/
+/desktop/logs/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.log
+
+# Local desktop distributions and runtime fixtures
+/desktop/dist/
+/desktop/packaging/bootstrap_fixture/
+
+# Downloaded reference projects and original asset workspaces
+/development_resources/
+/development_assets/
+/openPlan3D-main/
+/GEstimator-2.7/
+/￾￿￿￿̃/
+
+# Machine-specific configuration
+.env
+.env.*
+!.env.example
+/.aws/
+/.codex/
+/.agents/
+/.vscode/
+Thumbs.db
+Desktop.ini
+
+# Keep vendor/dev/*.tgz: package.json installs these local npm dependencies.
+# Keep static/studio JavaScript: the Python service serves these built modules,
+# and several lib/*.js files are authoritative source code.

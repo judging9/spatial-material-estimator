@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { resolve, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const modules = process.env.OPENING_3D_BUILD ? pathToFileURL(join(resolve(process.env.OPENING_3D_BUILD), 'lib') + '/') : new URL('../static/studio/lib/', import.meta.url);
+const { openingWallFrame, rayOpeningWall, openingContour3D } = await import(new URL('opening-3d.js', modules));
+const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} != ${b}`);
+const wall = { id: 'wall', start: { x: 100, y: 200 }, end: { x: 700, y: 200 }, thickness: 20, height: 300 };
+const opening = { id: 'opening', wallId: 'wall', kind: 'window', shape: 'rectangle', offset: 100, bottom: 90, width: 120, height: 100, depth: 8 };
+test('horizontal source wall rays map metric scene positions to local cm without a scale dependency', () => { const p = rayOpeningWall({ x: 2.6, y: 1.4, z: 5 }, { x: 0, y: 0, z: -1 }, wall); near(p.x, 160); near(p.y, 140); near(p.distance, 3); });
+test('reversed wall directions retain opening offset measured from the original source start', () => { const reversed = { ...wall, start: wall.end, end: wall.start }, p = rayOpeningWall({ x: 2.6, y: 1.4, z: 5 }, { x: 0, y: 0, z: -1 }, reversed); near(p.x, 440); near(p.y, 140); });
+test('diagonal wall planes preserve source-storey elevation and wall-face side', () => { const host = { ...wall, end: { x: 500, y: 600 } }, frame = openingWallFrame(host, 320, .1), point = { x: frame.origin.x + frame.along.x * 1.6, y: 4.4, z: frame.origin.z + frame.along.z * 1.6 }, origin = { x: point.x + frame.normal.x * 3, y: point.y, z: point.z + frame.normal.z * 3 }, p = rayOpeningWall(origin, { x: -frame.normal.x, y: 0, z: -frame.normal.z }, host, 320, .1); near(p.x, 160); near(p.y, 120); near(p.distance, 3); });
+test('parallel, backward and invalid rays do not invent a drag location', () => { assert.equal(rayOpeningWall({ x: 2, y: 1, z: 5 }, { x: 1, y: 0, z: 0 }, wall), null); assert.equal(rayOpeningWall({ x: 2, y: 1, z: 5 }, { x: 0, y: 0, z: 1 }, wall), null); assert.equal(rayOpeningWall({ x: NaN, y: 1, z: 5 }, { x: 0, y: 0, z: -1 }, wall), null); assert.equal(openingWallFrame({ ...wall, end: wall.start }), null); });
+test('3D aperture contours use the actual rectangular, ellipse and free polygon rings', () => { const rectangular = openingContour3D(opening, wall, 300, .1); near(rectangular[0].x, 2); near(rectangular[0].y, 3.9); near(rectangular[0].z, 2.1); near(rectangular[2].x, 3.2); near(rectangular[2].y, 4.9); const circle = openingContour3D({ ...opening, shape: 'ellipse', width: 100 }, wall); assert.equal(circle.length, 128); for (const point of circle) near(Math.hypot(point.x - 2.5, point.y - 1.4), .5); const triangle = openingContour3D({ ...opening, shape: 'polygon', points: [{ x: 0, y: 0 }, { x: 120, y: 0 }, { x: 60, y: 100 }] }, wall); assert.equal(triangle.length, 3); near(triangle[2].x, 2.6); near(triangle[2].y, 1.9); });

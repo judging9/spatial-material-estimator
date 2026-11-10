@@ -1,0 +1,120 @@
+import type { Furniture } from '../types.js';
+
+export type FurnitureCategory = 'living' | 'bedroom' | 'storage' | 'office' | 'kitchen' | 'bathroom' | 'appliances' | 'circulation' | 'electrical' | 'lighting' | 'smart';
+export type FurnitureTemplate = { kind: Furniture['kind']; name: string; width: number; depth: number; height: number; category: FurnitureCategory; keywords?: string; mountHeight?: number };
+
+/** Common, editable product forms. Dimensions are suggestions in centimetres;
+ * catalogue entries never supply a price or pretend to be a vendor product. */
+export const FURNITURE_TEMPLATES: ReadonlyArray<FurnitureTemplate> = [
+  { kind: 'sofa', name: '沙发', width: 220, depth: 90, height: 85, category: 'living' },
+  { kind: 'bed', name: '床', width: 180, depth: 210, height: 55, category: 'bedroom' },
+  { kind: 'table', name: '餐桌', width: 140, depth: 80, height: 75, category: 'living' },
+  { kind: 'chair', name: '椅子', width: 45, depth: 45, height: 85, category: 'living' },
+  { kind: 'cabinet', name: '柜体', width: 120, depth: 60, height: 200, category: 'storage' },
+  { kind: 'nightstand', name: '床头柜', width: 50, depth: 40, height: 55, category: 'bedroom' },
+  { kind: 'wardrobe', name: '衣柜', width: 180, depth: 60, height: 220, category: 'bedroom' },
+  { kind: 'custom', name: '自定义家具', width: 100, depth: 60, height: 80, category: 'storage', keywords: '其他 产品' },
+  { kind: 'tv', name: '电视', width: 123, depth: 25, height: 77, category: 'living', keywords: '电视机 TV 显示屏' },
+  { kind: 'tvStand', name: '电视柜', width: 180, depth: 40, height: 45, category: 'living' },
+  { kind: 'coffeeTable', name: '茶几', width: 110, depth: 60, height: 40, category: 'living' },
+  { kind: 'armchair', name: '单人沙发', width: 85, depth: 85, height: 90, category: 'living', keywords: '休闲椅 扶手椅' },
+  { kind: 'bookcase', name: '书架', width: 100, depth: 35, height: 200, category: 'storage', keywords: '书柜' },
+  { kind: 'shoeCabinet', name: '鞋柜', width: 100, depth: 35, height: 100, category: 'storage' },
+  { kind: 'sideboard', name: '餐边柜', width: 140, depth: 40, height: 90, category: 'storage' },
+  { kind: 'desk', name: '书桌', width: 120, depth: 60, height: 75, category: 'office', keywords: '办公桌 写字台' },
+  { kind: 'officeChair', name: '办公椅', width: 65, depth: 65, height: 110, category: 'office', keywords: '电脑椅' },
+  { kind: 'computer', name: '台式电脑', width: 65, depth: 45, height: 50, category: 'office', keywords: '主机 桌面计算机 PC', mountHeight: 75 },
+  { kind: 'monitor', name: '显示器', width: 61, depth: 20, height: 45, category: 'office', keywords: '电脑屏幕', mountHeight: 75 },
+  { kind: 'laptop', name: '笔记本电脑', width: 35, depth: 27, height: 25, category: 'office', mountHeight: 75 },
+  { kind: 'printer', name: '打印机', width: 45, depth: 40, height: 30, category: 'office', mountHeight: 75 },
+  { kind: 'kitchenBase', name: '厨房地柜', width: 120, depth: 60, height: 85, category: 'kitchen', keywords: '橱柜 厨柜 下柜' },
+  { kind: 'kitchenWall', name: '厨房吊柜', width: 100, depth: 35, height: 70, category: 'kitchen', keywords: '橱柜 厨柜 上柜', mountHeight: 150 },
+  { kind: 'kitchenIsland', name: '厨房岛台', width: 160, depth: 90, height: 90, category: 'kitchen', keywords: '中岛 操作台' },
+  { kind: 'countertop', name: '操作台', width: 120, depth: 60, height: 90, category: 'kitchen', keywords: '台面 工作台' },
+  { kind: 'sink', name: '厨房水槽', width: 80, depth: 50, height: 25, category: 'kitchen', keywords: '洗菜盆 洗碗池', mountHeight: 70 },
+  { kind: 'cooktop', name: '灶台', width: 75, depth: 45, height: 8, category: 'kitchen', keywords: '燃气灶 电磁炉 炉灶', mountHeight: 85 },
+  { kind: 'rangeHood', name: '油烟机', width: 90, depth: 50, height: 55, category: 'kitchen', keywords: '抽油烟机', mountHeight: 155 },
+  { kind: 'refrigerator', name: '冰箱', width: 70, depth: 70, height: 180, category: 'kitchen', keywords: '冷藏 冷冻' },
+  { kind: 'microwave', name: '微波炉', width: 50, depth: 40, height: 30, category: 'kitchen', mountHeight: 90 },
+  { kind: 'oven', name: '烤箱', width: 60, depth: 55, height: 60, category: 'kitchen', keywords: '蒸烤箱' },
+  { kind: 'dishwasher', name: '洗碗机', width: 60, depth: 60, height: 85, category: 'kitchen' },
+  { kind: 'washingMachine', name: '洗衣机', width: 60, depth: 60, height: 85, category: 'appliances', keywords: '滚筒 波轮' },
+  { kind: 'dryer', name: '烘干机', width: 60, depth: 60, height: 85, category: 'appliances', keywords: '干衣机' },
+  { kind: 'toilet', name: '坐便器', width: 40, depth: 70, height: 75, category: 'bathroom', keywords: '马桶' },
+  { kind: 'basin', name: '洗手盆', width: 60, depth: 45, height: 20, category: 'bathroom', keywords: '面盆 台盆', mountHeight: 70 },
+  { kind: 'vanity', name: '浴室柜', width: 90, depth: 50, height: 85, category: 'bathroom', keywords: '洗漱台 洗脸台' },
+  { kind: 'bathtub', name: '浴缸', width: 170, depth: 75, height: 60, category: 'bathroom' },
+  { kind: 'shower', name: '淋浴房', width: 90, depth: 90, height: 210, category: 'bathroom', keywords: '淋浴间 玻璃隔断' },
+  { kind: 'waterHeater', name: '热水器', width: 75, depth: 40, height: 40, category: 'bathroom', keywords: '电热水器', mountHeight: 170 },
+  { kind: 'airConditioner', name: '空调', width: 90, depth: 22, height: 30, category: 'appliances', keywords: '壁挂机', mountHeight: 210 },
+  { kind: 'floorLamp', name: '落地灯', width: 40, depth: 40, height: 160, category: 'living' },
+  { kind: 'bedsideLamp', name: '台灯', width: 25, depth: 25, height: 45, category: 'bedroom', keywords: '床头灯', mountHeight: 55 },
+  { kind: 'ceilingLight', name: '吸顶灯', width: 60, depth: 60, height: 12, category: 'appliances', keywords: '灯具 顶灯', mountHeight: 260 },
+  { kind: 'dresser', name: '梳妆台', width: 100, depth: 45, height: 130, category: 'bedroom', keywords: '化妆桌' },
+  { kind: 'singleBed', name: '单人床', width: 100, depth: 200, height: 55, category: 'bedroom' },
+  { kind: 'bunkBed', name: '上下铺', width: 100, depth: 200, height: 170, category: 'bedroom', keywords: '双层床 高低床' },
+  { kind: 'bench', name: '长凳', width: 120, depth: 40, height: 45, category: 'living', keywords: '换鞋凳' },
+  { kind: 'barStool', name: '吧台椅', width: 40, depth: 40, height: 80, category: 'kitchen', keywords: '高脚凳' },
+  { kind: 'stairs', name: '直跑楼梯', width: 90, depth: 360, height: 280, category: 'circulation', keywords: '楼梯 阶梯 loft 二楼 扶手 围栏' },
+  { kind: 'stairsLanding', name: '平台直跑楼梯', width: 100, depth: 420, height: 300, category: 'circulation', keywords: '楼梯 平台 双段 中间平台 扶手' },
+  { kind: 'stairsLLeft', name: 'L 型左转楼梯', width: 280, depth: 300, height: 300, category: 'circulation', keywords: '楼梯 L型 转角 左拐 扶手' },
+  { kind: 'stairsLRight', name: 'L 型右转楼梯', width: 280, depth: 300, height: 300, category: 'circulation', keywords: '楼梯 L型 转角 右拐 扶手' },
+  { kind: 'stairsU', name: 'U 型折返楼梯', width: 220, depth: 360, height: 300, category: 'circulation', keywords: '楼梯 U型 折返 双跑 扶手' },
+  { kind: 'stairsSpiralLeft', name: '左旋螺旋楼梯', width: 240, depth: 240, height: 300, category: 'circulation', keywords: '楼梯 圆环 圆形 螺旋 旋转 左旋 扶手' },
+  { kind: 'stairsSpiralRight', name: '右旋螺旋楼梯', width: 240, depth: 240, height: 300, category: 'circulation', keywords: '楼梯 圆环 圆形 螺旋 旋转 右旋 扶手' },
+  { kind: 'stairsArcLeft', name: '左转弧形楼梯', width: 280, depth: 320, height: 300, category: 'circulation', keywords: '楼梯 圆弧 半圆 弧形 左转 扶手' },
+  { kind: 'stairsArcRight', name: '右转弧形楼梯', width: 280, depth: 320, height: 300, category: 'circulation', keywords: '楼梯 圆弧 半圆 弧形 右转 扶手' },
+  { kind: 'socketFive', name: '五孔插座', width: 8.6, depth: 1.5, height: 8.6, category: 'electrical', keywords: '插座 电源 强电 86型 二三孔 10A', mountHeight: 30 },
+  { kind: 'socketWaterproof', name: '防水插座', width: 10, depth: 4, height: 12, category: 'electrical', keywords: '插座 防溅盒 卫浴 阳台 电源', mountHeight: 120 },
+  { kind: 'socketFloor', name: '地插', width: 12, depth: 12, height: 3, category: 'electrical', keywords: '地面插座 弹起 插座 电源' },
+  { kind: 'socketUsb', name: 'USB 插座', width: 8.6, depth: 1.8, height: 8.6, category: 'electrical', keywords: '插座 USB Type-C 充电 五孔', mountHeight: 80 },
+  { kind: 'socketAirConditioner', name: '空调插座', width: 8.6, depth: 1.5, height: 8.6, category: 'electrical', keywords: '插座 电源 三孔 16A 大功率', mountHeight: 210 },
+  { kind: 'powerPlug', name: '三脚插头', width: 4.5, depth: 4.5, height: 5.5, category: 'electrical', keywords: '插头 电源 插接 连接器', mountHeight: 30 },
+  { kind: 'switchSingle', name: '单联开关', width: 8.6, depth: 1.5, height: 8.6, category: 'electrical', keywords: '开关 单开 单控 灯', mountHeight: 120 },
+  { kind: 'switchDouble', name: '双联开关', width: 8.6, depth: 1.5, height: 8.6, category: 'electrical', keywords: '开关 双开 两键 灯', mountHeight: 120 },
+  { kind: 'switchTriple', name: '三联开关', width: 8.6, depth: 1.5, height: 8.6, category: 'electrical', keywords: '开关 三开 三键 灯', mountHeight: 120 },
+  { kind: 'switchTwoWay', name: '双控开关', width: 8.6, depth: 1.5, height: 8.6, category: 'electrical', keywords: '开关 双控 两地 楼梯 灯', mountHeight: 120 },
+  { kind: 'switchDimmer', name: '调光开关', width: 8.6, depth: 2, height: 8.6, category: 'electrical', keywords: '开关 调光 旋钮 亮度 灯', mountHeight: 120 },
+  { kind: 'distributionBox', name: '配电箱', width: 36, depth: 12, height: 48, category: 'electrical', keywords: '强电箱 断路器 空开 电闸 配电', mountHeight: 140 },
+  { kind: 'lowVoltageBox', name: '弱电箱', width: 40, depth: 12, height: 30, category: 'electrical', keywords: '信息箱 网络 光纤 电视 弱电 配线', mountHeight: 30 },
+  { kind: 'networkPanel', name: '网络面板', width: 8.6, depth: 1.5, height: 8.6, category: 'electrical', keywords: '网线 网口 RJ45 六类 信息 双口 面板', mountHeight: 30 },
+  { kind: 'tvPanel', name: '电视面板', width: 8.6, depth: 1.5, height: 8.6, category: 'electrical', keywords: '电视 天线 同轴 TV 弱电 面板', mountHeight: 30 },
+  { kind: 'waterOutletCold', name: '冷水出水口', width: 6, depth: 6, height: 6, category: 'electrical', keywords: '水管 给水 冷水 内丝 水口 水电', mountHeight: 50 },
+  { kind: 'waterOutletHot', name: '热水出水口', width: 6, depth: 6, height: 6, category: 'electrical', keywords: '水管 给水 热水 内丝 水口 水电', mountHeight: 50 },
+  { kind: 'floorDrain', name: '地漏', width: 10, depth: 10, height: 2, category: 'electrical', keywords: '排水 卫浴 阳台 排水口 水电' },
+  { kind: 'waterValve', name: '水阀', width: 10, depth: 6, height: 8, category: 'electrical', keywords: '阀门 角阀 球阀 截止阀 给水 水电', mountHeight: 50 },
+  { kind: 'manifold', name: '分水器', width: 50, depth: 12, height: 35, category: 'electrical', keywords: '地暖 给水 分集水器 分水器 水电', mountHeight: 40 },
+  { kind: 'downlight', name: '筒灯', width: 10, depth: 10, height: 6, category: 'lighting', keywords: '灯具 嵌入式 LED 照明', mountHeight: 254 },
+  { kind: 'spotlight', name: '射灯', width: 8, depth: 14, height: 16, category: 'lighting', keywords: '灯具 明装 轨道 聚光 照明', mountHeight: 244 },
+  { kind: 'ledStripController', name: '灯带控制器', width: 17, depth: 4, height: 3, category: 'lighting', keywords: '灯带 LED 驱动 电源 变压器 控制器', mountHeight: 255 },
+  { kind: 'wallLight', name: '壁灯', width: 14, depth: 12, height: 25, category: 'lighting', keywords: '灯具 墙灯 床头 照明', mountHeight: 180 },
+  { kind: 'pendantLight', name: '吊灯', width: 40, depth: 40, height: 75, category: 'lighting', keywords: '灯具 餐桌 垂吊 照明', mountHeight: 185 },
+  { kind: 'linearLight', name: '线性灯', width: 100, depth: 6, height: 6, category: 'lighting', keywords: '灯具 长条 吊顶 照明', mountHeight: 254 },
+  { kind: 'router', name: '无线路由器', width: 24, depth: 16, height: 18, category: 'smart', keywords: '网络 网线 WiFi 弱电 路由', mountHeight: 100 },
+  { kind: 'wirelessAP', name: '无线 AP', width: 18, depth: 18, height: 4, category: 'smart', keywords: '网络 WiFi AP 无线 接入点 弱电', mountHeight: 256 },
+  { kind: 'radiator', name: '暖气片', width: 80, depth: 10, height: 60, category: 'smart', keywords: '暖通 散热器 采暖', mountHeight: 15 },
+  { kind: 'freshAirVent', name: '新风口', width: 40, depth: 5, height: 15, category: 'smart', keywords: '暖通 新风 送风 回风 格栅', mountHeight: 240 },
+  { kind: 'exhaustFan', name: '排风扇', width: 25, depth: 7, height: 25, category: 'smart', keywords: '暖通 排气 通风 卫生间 风机', mountHeight: 220 },
+  { kind: 'thermostat', name: '温控器', width: 8.6, depth: 2.5, height: 8.6, category: 'smart', keywords: '暖通 地暖 温度 控制器 智能', mountHeight: 130 },
+  { kind: 'smokeDetector', name: '烟感探测器', width: 10, depth: 10, height: 4, category: 'smart', keywords: '烟感 报警器 消防 智能 安防', mountHeight: 256 },
+  { kind: 'smartPanel', name: '智能控制面板', width: 12, depth: 2, height: 8.6, category: 'smart', keywords: '智能 中控 场景 屏幕 开关', mountHeight: 120 },
+  { kind: 'doorbell', name: '可视门铃', width: 5, depth: 3, height: 13, category: 'smart', keywords: '智能 门铃 摄像头 安防 对讲', mountHeight: 140 },
+];
+
+export const FURNITURE_CATEGORIES = [
+  { id: 'all', name: '全部' }, { id: 'living', name: '客餐厅' }, { id: 'bedroom', name: '卧室' },
+  { id: 'kitchen', name: '厨房' }, { id: 'bathroom', name: '卫浴' }, { id: 'office', name: '办公' },
+  { id: 'appliances', name: '家电灯具' }, { id: 'storage', name: '收纳' }, { id: 'circulation', name: '楼梯' },
+  { id: 'electrical', name: '水电点位' }, { id: 'lighting', name: '灯具' }, { id: 'smart', name: '智能与暖通' },
+] as const;
+
+export function furnitureMatches(template: FurnitureTemplate, query = '', category = 'all'): boolean {
+  const tokens = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  const kind = template.kind.toLocaleLowerCase();
+  const words = `${template.name} ${template.kind.replace(/([a-z0-9])([A-Z])/g, '$1 $2')} ${template.keywords || ''}`.toLocaleLowerCase();
+  return (category === 'all' || template.category === category) && tokens.every(token => token === kind || words.includes(token));
+}
+
+export function searchFurnitureTemplates(query = '', category = 'all'): FurnitureTemplate[] {
+  return FURNITURE_TEMPLATES.filter(template => furnitureMatches(template, query, category));
+}

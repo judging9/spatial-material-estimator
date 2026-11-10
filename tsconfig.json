@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,
+    "skipLibCheck": true,
+    "rootDir": "static/studio",
+    "outDir": "build/studio",
+    "sourceMap": true
+  },
+  "include": ["static/studio/**/*.ts", "static/studio/lib/*.js"],
+  "exclude": ["static/studio/app.js", "static/studio/canvas.js"]
+}

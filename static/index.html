@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>材料报价系统</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar no-print">
+    <div class="brand">
+      <div class="logo">材</div>
+      <div>
+        <div class="brand-title">材料报价系统</div>
+        <div class="brand-sub">Market Price Quotation</div>
+      </div>
+    </div>
+    <nav id="nav">
+      <a data-view="quotes" class="active"><span class="ico">▤</span>报价单</a>
+      <a data-view="materials"><span class="ico">▦</span>材料库</a>
+      <a data-view="prices"><span class="ico">↻</span>价格更新</a>
+      <a data-view="sources"><span class="ico">◎</span>抓取源</a>
+      <a data-view="help"><span class="ico">?</span>使用说明</a>
+      <a href="/studio"><span class="ico">◇</span>图纸选材工作台</a>
+    </nav>
+    <div class="side-foot">
+      <div id="stats" class="stats">加载中…</div>
+    </div>
+  </aside>
+
+  <main id="main" class="main"></main>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast" class="toast"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

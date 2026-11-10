@@ -1,0 +1,17 @@
+{
+  "id": "5f91da566b07465886384f61a9e65b46",
+  "name": "plan.pdf",
+  "type": "pdf",
+  "original": "original.pdf",
+  "sha256": "9e96880bf1747a0752bd92bd0e76ddd7256c081d7763e9760d3e4265008438f4",
+  "pages": 1,
+  "rendered": {
+    "1": {
+      "asset": "page-1.png",
+      "width": 1334,
+      "height": 1334,
+      "dpi": 480.24,
+      "renderer": "windows-pdf"
+    }
+  }
+}

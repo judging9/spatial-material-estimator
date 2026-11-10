@@ -1,0 +1,260 @@
+import { createRoadProfile, validateRoadProfile, roadProfileAnalysis, roadProfileElevation, roadPointAtStation, roadCrossSectionAtStation } from './lib/road-profile.js';
+import { terrainElevation } from './lib/terrain.js';
+import { createEarthworkBalance } from './lib/earthwork-balance.js';
+import { escape, icon, measure, money, openDialog, toast } from './ui.js';
+const display = (value, digits = 2) => value === null ? '缺少地形' : measure(value, digits);
+const signed = (value, digits = 3) => (value > 0 ? '+' : '') + measure(value, digits);
+function chart(analysis) {
+    const rows = analysis.rows;
+    if (!rows.length)
+        return '<p class="help">请校准图纸并启用纵断面。</p>';
+    const width = 880, height = 246, left = 56, right = 22, top = 24, bottom = 38, length = analysis.horizontalLength ?? rows.at(-1).station;
+    const values = rows.flatMap(row => [row.designElevation, row.formationElevation, ...(row.groundElevation !== null ? [row.groundElevation] : [])]), low = Math.min(...values), high = Math.max(...values), margin = Math.max(.2, (high - low) * .15), min = low - margin, max = high + margin;
+    const x = (station) => left + (width - left - right) * station / Math.max(length, .001), y = (elevation) => top + (height - top - bottom) * (max - elevation) / (max - min);
+    const path = (field) => { let drawing = false; return rows.map(row => { const value = row[field]; if (value === null) {
+        drawing = false;
+        return '';
+    } const command = drawing ? 'L' : 'M'; drawing = true; return `${command}${x(row.station).toFixed(2)},${y(value).toFixed(2)}`; }).join(' '); };
+    const grid = Array.from({ length: 5 }, (_, i) => { const value = min + (max - min) * i / 4, cy = y(value); return `<path class="rp-grid" d="M${left} ${cy}H${width - right}"/><text x="${left - 9}" y="${cy + 4}" text-anchor="end">${value.toFixed(2)}</text>`; }).join('');
+    const stations = Array.from({ length: 5 }, (_, i) => { const value = length * i / 4; return `<text x="${x(value)}" y="${height - 15}" text-anchor="middle">${value.toFixed(1)}</text>`; }).join('');
+    const curves = analysis.verticalCurves.map(curve => `<path class="rp-curve-range" d="M${x(curve.startStation)} ${height - bottom}H${x(curve.endStation)}"/><circle class="rp-pvi" cx="${x(curve.pviStation)}" cy="${y(curve.pviElevation)}" r="3"><title>PVI ${measure(curve.pviStation, 2)} m · 竖曲线 ${measure(curve.length, 2)} m</title></circle>`).join('');
+    return `<svg class="rp-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="道路纵断面：原地面、实际设计路面和路床高程">${grid}${stations}<text x="10" y="14">高程 m</text><text x="${width - right}" y="${height - 1}" text-anchor="end">里程 m</text><path class="rp-ground" d="${path('groundElevation')}"/><path class="rp-formation" d="${path('formationElevation')}"/><path class="rp-design" d="${path('designElevation')}"/>${curves}</svg><div class="rp-legend"><span><i class="ground"></i>原地面</span><span><i class="design"></i>实际路面</span><span><i class="formation"></i>路床</span>${analysis.verticalCurves.length ? '<span><i class="curve"></i>竖曲线 / PVI</span>' : ''}<small>高程方向放大显示；空白原地面表示无测量覆盖</small></div>`;
+}
+function crossSection(project, item, analysis, index) {
+    if (!analysis.enabled)
+        return '<p class="help">启用纵断面后预览横断面。</p>';
+    const rows = analysis.sideSlopeDesign.sections, selected = rows[Math.min(index, rows.length - 1)], fallback = previewCrossfallStations(item.roadProfile, analysis.horizontalLength ?? 0), station = selected?.station ?? fallback[index] ?? (analysis.horizontalLength ?? 0) / 2, center = roadPointAtStation(project, item, station);
+    if (!center)
+        return '<p class="help">图纸尚未校准。</p>';
+    const half = item.width / 200, depth = analysis.earthworks?.formationDepth ?? 0, z = roadProfileElevation(item.roadProfile, station), crossfall = roadCrossSectionAtStation(item.roadProfile, station), leftZ = z + half * crossfall.leftSlope / 100, rightZ = z + half * crossfall.rightSlope / 100;
+    // Miter edges are farther from the centre than the nominal half-width.
+    // Plot those actual ray distances while retaining the specified crossfall
+    // elevations, so measured ground and the road edge share the same XY ray.
+    const leftHalf = selected ? Math.hypot(selected.left.edge.x - center.x, selected.left.edge.y - center.y) : half, rightHalf = selected ? Math.hypot(selected.right.edge.x - center.x, selected.right.edge.y - center.y) : half;
+    const leftExtent = leftHalf + (selected?.left.width ?? 0), rightExtent = rightHalf + (selected?.right.width ?? 0), padding = Math.max(.5, (leftExtent + rightExtent) * .12), minX = -leftExtent - padding, maxX = rightExtent + padding;
+    const before = roadPointAtStation(project, item, Math.max(0, station - .01)), after = roadPointAtStation(project, item, Math.min(analysis.horizontalLength, station + .01)), dx = after.x - before.x, dy = after.y - before.y, distance = Math.hypot(dx, dy), normal = { x: -dy / distance, y: dx / distance };
+    // Use actual transverse rays at miter sections; unmeasured ground is a gap.
+    const groundPoints = Array.from({ length: 65 }, (_, i) => { const offset = minX + (maxX - minX) * i / 64, side = offset < 0 ? selected?.left : selected?.right, edgeDistance = side ? Math.hypot(side.edge.x - center.x, side.edge.y - center.y) : half, dir = side ? { x: (side.edge.x - center.x) / edgeDistance, y: (side.edge.y - center.y) / edgeDistance } : { x: offset < 0 ? normal.x : -normal.x, y: offset < 0 ? normal.y : -normal.y }; return { x: offset, z: project.municipalTerrain ? terrainElevation(project.municipalTerrain, center.x + dir.x * Math.abs(offset), center.y + dir.y * Math.abs(offset)) : null }; });
+    const values = [z, leftZ, rightZ, leftZ - depth, rightZ - depth, ...groundPoints.filter(point => point.z !== null).map(point => point.z), ...(selected ? [selected.left.outer.z, selected.right.outer.z] : [])], low = Math.min(...values), high = Math.max(...values), margin = Math.max(.15, (high - low) * .15), minZ = low - margin, maxZ = high + margin;
+    const width = 460, height = 190, x = (v) => 40 + (width - 60) * (v - minX) / (maxX - minX), y = (v) => 16 + (height - 48) * (maxZ - v) / (maxZ - minZ), path = (points) => points.map((point, i) => `${i ? 'L' : 'M'}${x(point.x).toFixed(2)},${y(point.z).toFixed(2)}`).join(' ');
+    let connected = false;
+    const ground = groundPoints.map(point => { if (point.z === null) {
+        connected = false;
+        return '';
+    } const command = connected ? 'L' : 'M'; connected = true; return `${command}${x(point.x).toFixed(2)},${y(point.z).toFixed(2)}`; }).join(' ');
+    const roof = path([{ x: -leftHalf, z: leftZ }, { x: 0, z }, { x: rightHalf, z: rightZ }]), formation = path([{ x: -leftHalf, z: leftZ - depth }, { x: 0, z: z - depth }, { x: rightHalf, z: rightZ - depth }]);
+    const slopes = selected ? ['left', 'right'].map(side => { const result = selected[side], sign = side === 'left' ? -1 : 1, edgeDistance = side === 'left' ? leftHalf : rightHalf; return result.status === 'complete' ? `<path class="rp-slope" d="${path([{ x: sign * edgeDistance, z: result.edge.z }, { x: sign * (edgeDistance + result.width), z: result.outer.z }])}"/>` : ''; }).join('') : '';
+    const status = (side) => { const result = selected?.[side]; if (!result)
+        return ''; return `<span>${side === 'left' ? '左侧' : '右侧'} ${result.status === 'complete' ? `${result.kind === 'cut' ? '挖方' : result.kind === 'fill' ? '填方' : '齐平'} · 找坡 ${measure(result.width, 2)} m` : result.status === 'limit' ? '超出找坡宽度' : '缺少连续地形'}</span>`; };
+    return `<svg class="rp-chart rp-cross-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="道路实际横坡与挖填边坡断面"><path class="rp-grid" d="M${x(0)} 16V${height - 32}"/><path class="rp-ground" d="${ground}"/><path class="rp-formation" d="${formation}"/><path class="rp-design" d="${roof}"/>${slopes}<text x="8" y="14">高程 m</text><text x="${x(-leftHalf)}" y="${height - 12}" text-anchor="middle">左缘</text><text x="${x(0)}" y="${height - 12}" text-anchor="middle">中线</text><text x="${x(rightHalf)}" y="${height - 12}" text-anchor="middle">右缘</text></svg><div class="rp-daylight-status">${status('left')}${status('right')}</div><p class="help">里程 ${measure(station, 2)} m · 高程方向放大示意；横向距离单位 m。</p>`;
+}
+const previewCrossfallStations = (profile, length) => profile.crossfallPoints ? [...new Set([0, length / 2, length, ...profile.crossfallPoints.map(point => point.station)])].sort((a, b) => a - b) : [length / 2];
+function balancePreview(balance) {
+    if (!balance.enabled)
+        return '<p class="help">按需启用。输入自己的土质转换参数，核对这条道路的复用、借方与弃方。</p>';
+    const quantities = [['可利用挖方', 'usableCutNatural'], ['填筑天然方需求', 'fillDemandNatural'], ['场内复用', 'reuseNatural'], ['外购借方', 'borrowNatural'], ['外运弃方', 'spoilNatural']];
+    const volumes = balance.volumes;
+    return `<div class="rp-balance-measures">${quantities.map(([name, key]) => `<div class="stat-row"><span>${name}</span><strong data-road-balance-volume="${key}">${volumes ? measure(Number(volumes[key]), 3) + ' m³' : '待确认'}</strong></div>`).join('')}</div><p class="help">以上均为天然方。${volumes ? `松方：复用 ${measure(Number(volumes.reuseLoose), 3)} / 借方 ${measure(Number(volumes.borrowLoose), 3)} / 弃方 ${measure(Number(volumes.spoilLoose), 3)} m³。` : ''}</p>${balance.items.length ? `<div class="rp-balance-costs">${balance.items.map(row => `<div class="stat-row" data-road-balance-item="${row.key}"><span>${escape(row.name)}<small>${row.quantity === null ? '数量待确认' : measure(Number(row.quantity), 3) + ' ' + row.unit}</small></span><strong>${row.amount === null ? '待确认' : '¥ ' + money(row.amount)}</strong></div>`).join('')}<div class="rp-earthwork-cost"><span>单条实绘道路 · ${balance.pending ? '已确认费用' : '借料与运输小计'}</span><strong data-road-balance-total>¥ ${money(balance.knownCost)}</strong></div></div>` : '<p class="help">尚未勾选借料或运输费用；当前只核对平衡量。</p>'}${balance.pendingReasons.length ? `<div class="rp-balance-pending" aria-live="polite">${balance.pendingReasons.map(reason => `<p class="rp-warning">${escape(reason)}</p>`).join('')}</div>` : ''}`;
+}
+function balanceEditor(config) {
+    const field = (key, label, value, unit, maximum = '') => `<label><span class="field-label">${label}</span><span class="input-affix"><input type="number" min="0" ${maximum ? 'max="' + maximum + '"' : ''} step="any" data-road-balance-field="${key}" aria-label="${label}" placeholder="待填写" value="${escape(value)}"><span>${unit}</span></span></label>`;
+    const haul = (key, label) => `<section class="rp-balance-budget"><label class="rp-switch"><input type="checkbox" data-road-balance-budget="${key}" ${config[key].enabled ? 'checked' : ''}>${label}</label><div class="field-grid">${field(key + '.distanceKm', '自定运距', config[key].distanceKm, 'km')}${field(key + '.unitPrice', '松方运输单价', config[key].unitPrice, '元/(m³·km)')}</div></section>`;
+    return `<details class="rp-balance" ${config.enabled ? 'open' : ''}><summary>土方平衡与运输 <span>单条道路</span></summary><div class="rp-balance-body"><label class="rp-switch"><input id="road-balance-enabled" type="checkbox" ${config.enabled ? 'checked' : ''}>启用土方平衡</label><p class="help">保留真实天然挖方和压实填方，以自填系数换算供需；仅在这条实绘道路内复用。</p><div class="rp-balance-factors">${field('usableCutPercent', '可利用挖方比例', config.usableCutPercent, '%', '100')}${field('naturalPerCompactedFill', '每压实方所需天然方', config.naturalPerCompactedFill, 'm³/m³', '1000')}${field('loosePerNatural', '天然方转松方系数', config.loosePerNatural, 'm³/m³', '1000')}</div><div class="rp-balance-layout"><section><h3>供需与体积</h3><div id="road-balance-preview"></div></section><section><h3>额外计价项目</h3><section class="rp-balance-budget"><label class="rp-switch"><input type="checkbox" data-road-balance-budget="borrowMaterial" ${config.borrowMaterial.enabled ? 'checked' : ''}>外购借方材料</label>${field('borrowMaterial.unitPrice', '借方材料单价（天然方）', config.borrowMaterial.unitPrice, '元/m³')}</section>${haul('reuseHaul', '场内复用运输')}${haul('borrowHaul', '借方运输')}${haul('spoilHaul', '弃方运输')}<p class="help">借料按天然方；运输按松方 × 运距。不勾选的费用不计入预算。请核对原挖填综合单价是否已经包含借料或运输，避免重复收费。</p></section></div><p class="help">体积和费用对应一条实绘道路；项目预算另按道路预算份数汇总。软件不自动跨道路调配，不推断土质、运距或清表数量。</p></div></details>`;
+}
+export function renderRoadProfileSummary(project, item) {
+    const analysis = roadProfileAnalysis(project, item), earth = analysis.earthworks;
+    const html = `<section class="panel-section rp-inspector"><div class="section-head"><h3>道路纵断面</h3><span class="chip">${analysis.enabled ? '已启用' : '统一标高'}</span></div>${analysis.enabled ? `<div class="stat-row"><span>水平路线 / 设计线</span><strong>${measure(analysis.horizontalLength, 2)} / ${measure(analysis.designLength, 2)} m</strong></div><div class="stat-row"><span>最大绝对纵坡</span><strong>${measure(analysis.maxAbsGrade * 100, 2)} %</strong></div>${earth?.enabled ? `<div class="stat-row"><span>路床挖方 / 填方</span><strong>${measure(earth.cutVolume, 2)} / ${measure(earth.fillVolume, 2)} m³</strong></div><p class="help">${earth.pending ? escape(earth.pendingReason) : '已按测量地形与设计路床计量。'}</p>` : ''}` : '<p class="help">输入变坡点高程，查看原地面和设计线，按真实地形计算路床挖填。</p>'}${analysis.earthworkBalance.enabled ? `<div class="stat-row"><span>借方 / 弃方（天然方）</span><strong>${analysis.earthworkBalance.volumes ? measure(Number(analysis.earthworkBalance.volumes.borrowNatural), 2) + ' / ' + measure(Number(analysis.earthworkBalance.volumes.spoilNatural), 2) + ' m³' : '待确认'}</strong></div>` : ''}<button class="button subtle full spaced" data-action="road-profile">${icon('route', 15)}${analysis.enabled ? '编辑纵断面与土方' : '设置纵断面与土方'}</button></section>`;
+    return item.roadProfile?.crossfallPoints ? html.replace('<button class="button', '<div class="stat-row"><span>里程横坡 / 超高过渡</span><strong>' + item.roadProfile.crossfallPoints.length + ' 点</strong></div><button class="button') : html;
+}
+export function showRoadProfileEditor(project, item, onChange) {
+    let draft = structuredClone(item.roadProfile ?? createRoadProfile(project, item));
+    draft.earthwork ??= { enabled: false, cutUnitPrice: '', fillUnitPrice: '' };
+    draft.earthworkBalance ??= createEarthworkBalance();
+    draft.crossSection ??= { leftSlope: 0, rightSlope: 0 };
+    draft.sideSlopes ??= { enabled: false, leftCut: 1.5, rightCut: 1.5, leftFill: 1.5, rightFill: 1.5, maxWidth: 20, interval: 2 };
+    draft.curveTolerance ??= .002;
+    const disabled = item.locked ? 'disabled' : '';
+    const dialog = openDialog('道路纵断面', `<form id="road-profile-form"><div class="rp-toolbar"><label class="rp-switch"><input id="road-profile-enabled" type="checkbox" ${draft.enabled ? 'checked' : ''} ${disabled}>启用分段纵坡</label><label class="rp-spacing"><span>地面采样间距</span><span class="input-affix"><input id="road-profile-interval" type="number" min=".1" max="10000" step="any" value="${draft.sampleInterval}" ${disabled}><span>m</span></span></label></div><div id="road-profile-chart"></div><div class="rp-columns"><section><div class="section-head"><h3>变坡点</h3><button id="road-profile-add" class="button subtle" type="button" ${disabled}>${icon('plus', 14)}添加</button></div><div class="rp-point-head"><span>节点</span><span>里程 m</span><span>路面高程 m</span><span></span></div><div id="road-profile-points"></div><p class="help">起终里程跟随实际路线长度，中间点控制纵坡；不自动套用设计规范。</p><div id="road-profile-grades"></div></section><section class="rp-earthwork"><div class="section-head"><h3>路床挖填</h3><label class="rp-switch"><input id="road-earthwork-enabled" type="checkbox" ${draft.earthwork.enabled ? 'checked' : ''}>计入预算</label></div><div id="road-profile-earthwork"></div><div class="field-grid spaced"><label><span class="field-label">挖方综合单价</span><span class="input-affix"><input id="road-cut-price" type="number" min="0" step="any" placeholder="待填写" value="${escape(draft.earthwork.cutUnitPrice)}"><span>元/m³</span></span></label><label><span class="field-label">填方综合单价</span><span class="input-affix"><input id="road-fill-price" type="number" min="0" step="any" placeholder="待填写" value="${escape(draft.earthwork.fillUnitPrice)}"><span>元/m³</span></span></label></div><p class="help">路床高程 = 设计路面 − 主层及全部附加层厚度。价格由你填写，应明确挖运、回填压实等施工范围。</p></section></div><p id="road-profile-error" class="rp-error" aria-live="polite"></p><div class="rp-submit"><p class="help">${item.locked ? '道路几何已锁定，可修改土方报价。' : '应用后更新三维路面与预算；关闭分段纵坡恢复原统一标高。'}</p><button class="button primary" type="submit">应用纵断面</button></div></form>`, { wide: true, subtitle: `${item.name} · 所有里程和绝对高程均使用米` });
+    dialog.classList.add('road-profile-dialog');
+    const points = dialog.querySelector('#road-profile-points'), error = dialog.querySelector('#road-profile-error');
+    dialog.querySelector('.rp-point-head').innerHTML = '<span>节点</span><span>里程 m</span><span>PVI 高程 m</span><span>曲线长 m</span><span></span>';
+    points.nextElementSibling.textContent = '中间变坡点可设对称抛物线竖曲线。PVI 是两条坡线交点，曲线中点实际路面高程以图表为准；曲线长 0 保持折线。';
+    const numeric = (id, label, value, unit, min, max) => `<label><span class="field-label">${label}</span><span class="input-affix"><input id="${id}" type="number" step="any" min="${min}" max="${max}" value="${value}" ${disabled}><span>${unit}</span></span></label>`;
+    error.insertAdjacentHTML('beforebegin', `<details class="rp-advanced"><summary>横坡、边坡与曲线精度 <span>按需设置</span></summary><div class="rp-advanced-grid"><section><div class="section-head"><h3>道路横坡</h3><button id="road-crossfall-crown" class="button subtle" type="button" ${disabled}>两侧向外 −2%</button></div><div class="field-grid">${numeric('road-left-crossfall', '左侧横坡', draft.crossSection.leftSlope, '%', '-25', '25')}${numeric('road-right-crossfall', '右侧横坡', draft.crossSection.rightSlope, '%', '-25', '25')}</div><p class="help">负值向外下降，正值向外抬高；左右均从中线独立计算。</p><div class="section-head rp-cross-head"><h3>横断面预览</h3><select id="road-cross-section-index" aria-label="横断面里程"></select></div><div id="road-cross-section"></div></section><section><div class="section-head"><h3>挖填放坡</h3><label class="rp-switch"><input id="road-slope-enabled" type="checkbox" ${draft.sideSlopes.enabled ? 'checked' : ''} ${disabled}>启用边坡</label></div><div class="field-grid rp-side-inputs">${numeric('road-left-cut-slope', '左侧挖坡 H:V', draft.sideSlopes.leftCut, ': 1', '.05', '20')}${numeric('road-right-cut-slope', '右侧挖坡 H:V', draft.sideSlopes.rightCut, ': 1', '.05', '20')}${numeric('road-left-fill-slope', '左侧填坡 H:V', draft.sideSlopes.leftFill, ': 1', '.05', '20')}${numeric('road-right-fill-slope', '右侧填坡 H:V', draft.sideSlopes.rightFill, ': 1', '.05', '20')}${numeric('road-slope-max-width', '最大找坡宽度', draft.sideSlopes.maxWidth, 'm', '.1', '500')}${numeric('road-slope-interval', '放坡断面间距', draft.sideSlopes.interval, 'm', '.1', '100')}</div><p class="help">H:V 例如 1.5:1 表示水平 1.5 m / 竖直 1 m。沿实际测量地形寻找坡脚或坡顶，纵向按断面间距离散；交接冲突保持待确认。</p><div class="rp-tolerance">${numeric('road-curve-tolerance', '竖曲线弦高误差上限', draft.curveTolerance * 1000, 'mm', '.1', '50')}<p id="road-control-status" class="help"></p></div></section></div></details>`);
+    error.insertAdjacentHTML('beforebegin', balanceEditor(draft.earthworkBalance));
+    let crossfallDraft = structuredClone(draft.crossfallPoints ?? [{ id: 'cross-' + globalThis.crypto.randomUUID(), station: 0, ...draft.crossSection }, { id: 'cross-' + globalThis.crypto.randomUUID(), station: draft.points.at(-1).station, ...draft.crossSection }]);
+    dialog.querySelector('.rp-advanced-grid>section>.field-grid').insertAdjacentHTML('afterend', `<section class="rp-crossfall-transition"><div class="section-head"><label class="rp-switch"><input id="road-crossfall-variable" type="checkbox" ${draft.crossfallPoints ? 'checked' : ''} ${disabled}>按里程设置横坡 / 超高</label></div><div id="road-crossfall-table"><div class="rp-crossfall-actions"><button id="road-crossfall-add" class="button subtle" type="button" ${disabled}>${icon('plus', 12)}控制点</button><button id="road-crossfall-endpoints" class="button subtle" type="button" ${disabled}>起止过渡</button></div><div class="rp-crossfall-head"><span></span><span>里程 m</span><span>左横坡 %</span><span>右横坡 %</span><span></span></div><div id="road-crossfall-points"></div><p class="help">左右横坡按相邻里程点线性过渡；起止里程跟随实际路线。起止过渡保留首尾值，省去中间控制点；不推断道路等级设计值。</p></div></section>`);
+    dialog.querySelector('.rp-tolerance .field-label').textContent = '路面高程误差上限';
+    const renderCrossfall = () => {
+        const active = Boolean(draft.crossfallPoints);
+        dialog.querySelector('#road-crossfall-table').hidden = !active;
+        for (const id of ['road-left-crossfall', 'road-right-crossfall'])
+            dialog.querySelector('#' + id).disabled = Boolean(item.locked || active);
+        dialog.querySelector('#road-crossfall-points').innerHTML = crossfallDraft.map((point, index) => { const endpoint = index === 0 || index === crossfallDraft.length - 1; return `<div class="rp-crossfall-row" data-road-crossfall-point="${index}"><span>${index === 0 ? '起' : index === crossfallDraft.length - 1 ? '终' : String(index).padStart(2, '0')}</span><input type="number" step="any" min="0" data-road-crossfall-field="station" aria-label="横坡控制点${index + 1}里程米" value="${point.station}" ${endpoint ? 'readonly' : ''} ${disabled}><input type="number" min="-25" max="25" step="any" data-road-crossfall-field="leftSlope" aria-label="横坡控制点${index + 1}左横坡百分数" value="${point.leftSlope}" ${disabled}><input type="number" min="-25" max="25" step="any" data-road-crossfall-field="rightSlope" aria-label="横坡控制点${index + 1}右横坡百分数" value="${point.rightSlope}" ${disabled}><button class="icon-button" type="button" data-road-crossfall-remove="${index}" aria-label="删除横坡控制点${index + 1}" ${item.locked || endpoint ? 'disabled' : ''}>${icon('close', 12)}</button></div>`; }).join('');
+    };
+    renderCrossfall();
+    let crossIndex = 0, latest;
+    const previewCross = () => { if (latest)
+        dialog.querySelector('#road-cross-section').innerHTML = crossSection(project, { ...item, roadProfile: draft }, latest, crossIndex); };
+    const renderPoints = () => { points.innerHTML = draft.points.map((point, index) => { const endpoint = index === 0 || index === draft.points.length - 1; return `<div class="rp-point" data-road-profile-point="${index}"><span>${index === 0 ? '起点' : index === draft.points.length - 1 ? '终点' : String(index).padStart(2, '0')}</span><input type="number" step="any" min="0" data-road-grade-field="station" aria-label="变坡点${index + 1}里程米" value="${point.station}" ${endpoint ? 'readonly' : ''} ${disabled}><input type="number" step="any" data-road-grade-field="elevation" aria-label="变坡点${index + 1}高程米" value="${point.elevation}" ${disabled}><input type="number" step="any" min="0" data-road-grade-field="curveLength" aria-label="变坡点${index + 1}竖曲线长度米" value="${point.curveLength ?? 0}" ${endpoint || item.locked ? 'disabled' : ''}><button class="icon-button" type="button" data-road-grade-remove="${index}" aria-label="删除变坡点${index + 1}" ${item.locked || endpoint ? 'disabled' : ''}>${icon('close', 13)}</button></div>`; }).join(''); };
+    const preview = () => {
+        try {
+            validateRoadProfile(project, item, draft);
+            latest = roadProfileAnalysis(project, { ...item, roadProfile: draft });
+            const analysis = latest, earth = analysis.earthworks;
+            dialog.querySelector('#road-balance-preview').innerHTML = balancePreview(analysis.earthworkBalance);
+            dialog.querySelector('#road-profile-chart').innerHTML = chart(analysis);
+            dialog.querySelector('#road-profile-grades').innerHTML = analysis.segments.length ? `<div class="rp-grade-head"><span>里程段 m</span><span>纵坡 / 切线坡</span></div>${analysis.segments.map(segment => `<div class="rp-grade"><span>${measure(segment.startStation, 2)} – ${measure(segment.endStation, 2)} ${segment.kind === 'curve' ? '<small>竖曲线</small>' : ''}</span><strong>${segment.kind === 'curve' ? `${signed(segment.startGradePercent)} → ${signed(segment.endGradePercent)}` : signed(segment.gradePercent)} %</strong></div>`).join('')}` : '<p class="help">未启用分段纵坡。</p>';
+            dialog.querySelector('#road-profile-earthwork').innerHTML = earth ? `<div class="stat-row"><span>已覆盖施工范围</span><strong>${measure(earth.coveredArea, 2)} / ${measure(earth.designArea, 2)} m²</strong></div><div class="stat-row"><span>${earth.complete ? '挖方' : '已确认范围挖方'}</span><strong data-road-volume="cut">${measure(earth.cutVolume, 3)} m³</strong></div><div class="stat-row"><span>${earth.complete ? '填方' : '已确认范围填方'}</span><strong data-road-volume="fill">${measure(earth.fillVolume, 3)} m³</strong></div>${!earth.coverageComplete ? `<p class="help">未覆盖 ${measure(earth.uncoveredArea, 2)} m²，需补充测量点；当前不作为完整土方量。</p>` : ''}${analysis.sideSlopeDesign.enabled ? `<div class="stat-row"><span>边坡找坡</span><strong>${analysis.sideSlopeDesign.complete ? '已完成' : `${analysis.sideSlopeDesign.unresolvedCount} 处待确认`}</strong></div>` : ''}${analysis.sideSlopeDesign.warnings.map(warning => `<p class="rp-warning">${escape(warning)}</p>`).join('')}<div class="rp-earthwork-cost"><span>${earth.pending ? '已填写小计' : '土方小计'}</span><strong data-road-earthwork-total>¥ ${money(earth.knownCost)}</strong></div>${earth.pending ? `<p class="help">${escape(earth.pendingReason)}</p>` : ''}` : '<p class="help">启用纵坡后，与已导入测量地形计算真实路床挖填。</p>';
+            const select = dialog.querySelector('#road-cross-section-index'), rows = analysis.sideSlopeDesign.sections.length ? analysis.sideSlopeDesign.sections : draft.crossfallPoints ? previewCrossfallStations(draft, analysis.horizontalLength ?? 0).map(station => ({ station })) : [];
+            crossIndex = Math.min(crossIndex, Math.max(0, rows.length - 1));
+            select.innerHTML = rows.length ? rows.map((row, index) => `<option value="${index}" ${index === crossIndex ? 'selected' : ''}>${measure(row.station, 2)} m</option>`).join('') : '<option value="0">路线中点</option>';
+            select.disabled = !rows.length;
+            previewCross();
+            dialog.querySelector('#road-control-status').textContent = `${analysis.controlCount} 个设计控制断面 · 路面高程误差 ≤ ${measure(analysis.curveTolerance * 1000, 2)} mm。横坡过渡同时约束面内误差；地面图表采样不改变设计面和土方。`;
+            error.textContent = '';
+        }
+        catch (cause) {
+            error.textContent = cause.message;
+        }
+    };
+    renderPoints();
+    preview();
+    const numberFields = {
+        'road-profile-interval': value => draft.sampleInterval = value, 'road-left-crossfall': value => draft.crossSection.leftSlope = value, 'road-right-crossfall': value => draft.crossSection.rightSlope = value,
+        'road-left-cut-slope': value => draft.sideSlopes.leftCut = value, 'road-right-cut-slope': value => draft.sideSlopes.rightCut = value, 'road-left-fill-slope': value => draft.sideSlopes.leftFill = value, 'road-right-fill-slope': value => draft.sideSlopes.rightFill = value,
+        'road-slope-max-width': value => draft.sideSlopes.maxWidth = value, 'road-slope-interval': value => draft.sideSlopes.interval = value, 'road-curve-tolerance': value => draft.curveTolerance = value / 1000
+    };
+    dialog.addEventListener('input', event => {
+        const input = event.target;
+        try {
+            if (input.dataset.roadCrossfallField) {
+                if (item.locked || !draft.crossfallPoints)
+                    return;
+                const index = Number(input.closest('[data-road-crossfall-point]').dataset.roadCrossfallPoint);
+                crossfallDraft[index][input.dataset.roadCrossfallField] = input.value.trim() ? Number(input.value) : NaN;
+            }
+            else if (input.dataset.roadGradeField) {
+                if (item.locked)
+                    return;
+                const index = Number(input.closest('[data-road-profile-point]').dataset.roadProfilePoint);
+                draft.points[index][input.dataset.roadGradeField] = input.value.trim() ? Number(input.value) : NaN;
+            }
+            else if (numberFields[input.id]) {
+                if (item.locked)
+                    return;
+                numberFields[input.id](input.value.trim() ? Number(input.value) : NaN);
+            }
+            else if (input.dataset.roadBalanceField) {
+                const [key, field] = input.dataset.roadBalanceField.split('.');
+                if (field)
+                    draft.earthworkBalance[key][field] = input.value.trim();
+                else
+                    draft.earthworkBalance[key] = input.value.trim();
+            }
+            else if (input.id === 'road-cut-price' || input.id === 'road-fill-price')
+                draft.earthwork[input.id === 'road-cut-price' ? 'cutUnitPrice' : 'fillUnitPrice'] = input.value.trim();
+            else
+                return;
+            preview();
+        }
+        catch (cause) {
+            error.textContent = cause.message;
+        }
+    });
+    dialog.addEventListener('change', event => { const input = event.target; if (input.id === 'road-cross-section-index') {
+        crossIndex = Number(input.value);
+        previewCross();
+        return;
+    } if (input.id === 'road-balance-enabled')
+        draft.earthworkBalance.enabled = input.checked;
+    else if (input.dataset.roadBalanceBudget)
+        draft.earthworkBalance[input.dataset.roadBalanceBudget].enabled = input.checked;
+    else if (input.id === 'road-crossfall-variable' && !item.locked) {
+        if (input.checked)
+            draft.crossfallPoints = crossfallDraft;
+        else
+            delete draft.crossfallPoints;
+        renderCrossfall();
+    }
+    else if (input.id === 'road-profile-enabled' && !item.locked)
+        draft.enabled = input.checked;
+    else if (input.id === 'road-earthwork-enabled')
+        draft.earthwork.enabled = input.checked;
+    else if (input.id === 'road-slope-enabled' && !item.locked)
+        draft.sideSlopes.enabled = input.checked;
+    else
+        return; preview(); });
+    dialog.addEventListener('click', event => {
+        const target = event.target.closest('button');
+        if (!target || item.locked)
+            return;
+        if (target.id === 'road-crossfall-crown') {
+            draft.crossSection = { leftSlope: -2, rightSlope: -2 };
+            dialog.querySelector('#road-left-crossfall').value = '-2';
+            dialog.querySelector('#road-right-crossfall').value = '-2';
+            if (draft.crossfallPoints) {
+                crossfallDraft = crossfallDraft.map(point => ({ ...point, leftSlope: -2, rightSlope: -2 }));
+                draft.crossfallPoints = crossfallDraft;
+                renderCrossfall();
+            }
+            preview();
+        }
+        else if (target.id === 'road-crossfall-add' && draft.crossfallPoints) {
+            try {
+                validateRoadProfile(project, item, draft);
+                if (crossfallDraft.length >= 100)
+                    throw new RangeError('最多支持100个横坡控制点。');
+                const gap = crossfallDraft.slice(1).map((point, index) => ({ index, length: point.station - crossfallDraft[index].station })).sort((a, b) => b.length - a.length)[0], station = (crossfallDraft[gap.index].station + crossfallDraft[gap.index + 1].station) / 2;
+                crossfallDraft.splice(gap.index + 1, 0, { id: 'cross-' + globalThis.crypto.randomUUID(), station, ...roadCrossSectionAtStation(draft, station) });
+                renderCrossfall();
+                preview();
+            }
+            catch (cause) {
+                error.textContent = cause.message;
+            }
+        }
+        else if (target.id === 'road-crossfall-endpoints' && draft.crossfallPoints) {
+            crossfallDraft = [{ ...crossfallDraft[0] }, { ...crossfallDraft.at(-1) }];
+            draft.crossfallPoints = crossfallDraft;
+            renderCrossfall();
+            preview();
+        }
+        else if (target.dataset.roadCrossfallRemove !== undefined && draft.crossfallPoints) {
+            crossfallDraft.splice(Number(target.dataset.roadCrossfallRemove), 1);
+            renderCrossfall();
+            preview();
+        }
+        else if (target.id === 'road-profile-add') {
+            try {
+                validateRoadProfile(project, item, draft);
+                if (draft.points.length >= 100)
+                    throw new RangeError('最多支持 100 个变坡点。');
+                const gaps = draft.points.slice(1).map((point, index) => ({ index, length: point.station - draft.points[index].station })).sort((a, b) => b.length - a.length), index = gaps[0].index, station = (draft.points[index].station + draft.points[index + 1].station) / 2, elevation = roadProfileElevation(draft, station);
+                draft.points.splice(index + 1, 0, { id: 'grade-' + globalThis.crypto.randomUUID(), station, elevation });
+                renderPoints();
+                preview();
+            }
+            catch (cause) {
+                error.textContent = cause.message;
+            }
+        }
+        else if (target.dataset.roadGradeRemove !== undefined) {
+            draft.points.splice(Number(target.dataset.roadGradeRemove), 1);
+            renderPoints();
+            preview();
+        }
+    });
+    dialog.querySelector('form').addEventListener('submit', event => { event.preventDefault(); try {
+        validateRoadProfile(project, item, draft);
+        onChange(structuredClone(draft));
+        dialog.close();
+        toast('道路纵断面与土方参数已更新');
+    }
+    catch (cause) {
+        error.textContent = cause.message;
+        toast(cause.message, true);
+    } });
+    return dialog;
+}
+//# sourceMappingURL=road-profile-panel.js.map

@@ -1,0 +1,432 @@
+{
+  "schema": 1,
+  "license": "CC0-1.0",
+  "source": "Original procedural furniture meshes rendered as local SVG previews",
+  "models": [
+    {
+      "kind": "tv",
+      "preview": "furniture/tv.svg",
+      "faces": 24
+    },
+    {
+      "kind": "tvStand",
+      "preview": "furniture/tvStand.svg",
+      "faces": 78
+    },
+    {
+      "kind": "coffeeTable",
+      "preview": "furniture/coffeeTable.svg",
+      "faces": 30
+    },
+    {
+      "kind": "armchair",
+      "preview": "furniture/armchair.svg",
+      "faces": 30
+    },
+    {
+      "kind": "bookcase",
+      "preview": "furniture/bookcase.svg",
+      "faces": 72
+    },
+    {
+      "kind": "shoeCabinet",
+      "preview": "furniture/shoeCabinet.svg",
+      "faces": 54
+    },
+    {
+      "kind": "sideboard",
+      "preview": "furniture/sideboard.svg",
+      "faces": 54
+    },
+    {
+      "kind": "desk",
+      "preview": "furniture/desk.svg",
+      "faces": 36
+    },
+    {
+      "kind": "officeChair",
+      "preview": "furniture/officeChair.svg",
+      "faces": 42
+    },
+    {
+      "kind": "computer",
+      "preview": "furniture/computer.svg",
+      "faces": 36
+    },
+    {
+      "kind": "monitor",
+      "preview": "furniture/monitor.svg",
+      "faces": 24
+    },
+    {
+      "kind": "laptop",
+      "preview": "furniture/laptop.svg",
+      "faces": 24
+    },
+    {
+      "kind": "printer",
+      "preview": "furniture/printer.svg",
+      "faces": 24
+    },
+    {
+      "kind": "kitchenBase",
+      "preview": "furniture/kitchenBase.svg",
+      "faces": 54
+    },
+    {
+      "kind": "kitchenWall",
+      "preview": "furniture/kitchenWall.svg",
+      "faces": 30
+    },
+    {
+      "kind": "kitchenIsland",
+      "preview": "furniture/kitchenIsland.svg",
+      "faces": 48
+    },
+    {
+      "kind": "countertop",
+      "preview": "furniture/countertop.svg",
+      "faces": 30
+    },
+    {
+      "kind": "sink",
+      "preview": "furniture/sink.svg",
+      "faces": 19
+    },
+    {
+      "kind": "cooktop",
+      "preview": "furniture/cooktop.svg",
+      "faces": 34
+    },
+    {
+      "kind": "rangeHood",
+      "preview": "furniture/rangeHood.svg",
+      "faces": 18
+    },
+    {
+      "kind": "refrigerator",
+      "preview": "furniture/refrigerator.svg",
+      "faces": 30
+    },
+    {
+      "kind": "microwave",
+      "preview": "furniture/microwave.svg",
+      "faces": 30
+    },
+    {
+      "kind": "oven",
+      "preview": "furniture/oven.svg",
+      "faces": 30
+    },
+    {
+      "kind": "dishwasher",
+      "preview": "furniture/dishwasher.svg",
+      "faces": 24
+    },
+    {
+      "kind": "washingMachine",
+      "preview": "furniture/washingMachine.svg",
+      "faces": 26
+    },
+    {
+      "kind": "dryer",
+      "preview": "furniture/dryer.svg",
+      "faces": 26
+    },
+    {
+      "kind": "toilet",
+      "preview": "furniture/toilet.svg",
+      "faces": 20
+    },
+    {
+      "kind": "basin",
+      "preview": "furniture/basin.svg",
+      "faces": 19
+    },
+    {
+      "kind": "vanity",
+      "preview": "furniture/vanity.svg",
+      "faces": 49
+    },
+    {
+      "kind": "bathtub",
+      "preview": "furniture/bathtub.svg",
+      "faces": 31
+    },
+    {
+      "kind": "shower",
+      "preview": "furniture/shower.svg",
+      "faces": 42
+    },
+    {
+      "kind": "waterHeater",
+      "preview": "furniture/waterHeater.svg",
+      "faces": 30
+    },
+    {
+      "kind": "airConditioner",
+      "preview": "furniture/airConditioner.svg",
+      "faces": 36
+    },
+    {
+      "kind": "floorLamp",
+      "preview": "furniture/floorLamp.svg",
+      "faces": 18
+    },
+    {
+      "kind": "bedsideLamp",
+      "preview": "furniture/bedsideLamp.svg",
+      "faces": 18
+    },
+    {
+      "kind": "ceilingLight",
+      "preview": "furniture/ceilingLight.svg",
+      "faces": 12
+    },
+    {
+      "kind": "dresser",
+      "preview": "furniture/dresser.svg",
+      "faces": 48
+    },
+    {
+      "kind": "singleBed",
+      "preview": "furniture/singleBed.svg",
+      "faces": 24
+    },
+    {
+      "kind": "bunkBed",
+      "preview": "furniture/bunkBed.svg",
+      "faces": 96
+    },
+    {
+      "kind": "bench",
+      "preview": "furniture/bench.svg",
+      "faces": 30
+    },
+    {
+      "kind": "barStool",
+      "preview": "furniture/barStool.svg",
+      "faces": 30
+    },
+    {
+      "kind": "stairs",
+      "preview": "furniture/stairs.svg",
+      "faces": 684
+    },
+    {
+      "kind": "stairsLanding",
+      "preview": "furniture/stairsLanding.svg",
+      "faces": 768
+    },
+    {
+      "kind": "stairsLLeft",
+      "preview": "furniture/stairsLLeft.svg",
+      "faces": 768
+    },
+    {
+      "kind": "stairsLRight",
+      "preview": "furniture/stairsLRight.svg",
+      "faces": 768
+    },
+    {
+      "kind": "stairsU",
+      "preview": "furniture/stairsU.svg",
+      "faces": 840
+    },
+    {
+      "kind": "stairsSpiralLeft",
+      "preview": "furniture/stairsSpiralLeft.svg",
+      "faces": 3010
+    },
+    {
+      "kind": "stairsSpiralRight",
+      "preview": "furniture/stairsSpiralRight.svg",
+      "faces": 3010
+    },
+    {
+      "kind": "stairsArcLeft",
+      "preview": "furniture/stairsArcLeft.svg",
+      "faces": 1786
+    },
+    {
+      "kind": "stairsArcRight",
+      "preview": "furniture/stairsArcRight.svg",
+      "faces": 1786
+    },
+    {
+      "kind": "socketFive",
+      "preview": "furniture/socketFive.svg",
+      "faces": 48
+    },
+    {
+      "kind": "socketWaterproof",
+      "preview": "furniture/socketWaterproof.svg",
+      "faces": 72
+    },
+    {
+      "kind": "socketFloor",
+      "preview": "furniture/socketFloor.svg",
+      "faces": 54
+    },
+    {
+      "kind": "socketUsb",
+      "preview": "furniture/socketUsb.svg",
+      "faces": 72
+    },
+    {
+      "kind": "socketAirConditioner",
+      "preview": "furniture/socketAirConditioner.svg",
+      "faces": 42
+    },
+    {
+      "kind": "powerPlug",
+      "preview": "furniture/powerPlug.svg",
+      "faces": 64
+    },
+    {
+      "kind": "switchSingle",
+      "preview": "furniture/switchSingle.svg",
+      "faces": 30
+    },
+    {
+      "kind": "switchDouble",
+      "preview": "furniture/switchDouble.svg",
+      "faces": 42
+    },
+    {
+      "kind": "switchTriple",
+      "preview": "furniture/switchTriple.svg",
+      "faces": 54
+    },
+    {
+      "kind": "switchTwoWay",
+      "preview": "furniture/switchTwoWay.svg",
+      "faces": 48
+    },
+    {
+      "kind": "switchDimmer",
+      "preview": "furniture/switchDimmer.svg",
+      "faces": 98
+    },
+    {
+      "kind": "distributionBox",
+      "preview": "furniture/distributionBox.svg",
+      "faces": 180
+    },
+    {
+      "kind": "lowVoltageBox",
+      "preview": "furniture/lowVoltageBox.svg",
+      "faces": 78
+    },
+    {
+      "kind": "networkPanel",
+      "preview": "furniture/networkPanel.svg",
+      "faces": 126
+    },
+    {
+      "kind": "tvPanel",
+      "preview": "furniture/tvPanel.svg",
+      "faces": 60
+    },
+    {
+      "kind": "waterOutletCold",
+      "preview": "furniture/waterOutletCold.svg",
+      "faces": 70
+    },
+    {
+      "kind": "waterOutletHot",
+      "preview": "furniture/waterOutletHot.svg",
+      "faces": 70
+    },
+    {
+      "kind": "floorDrain",
+      "preview": "furniture/floorDrain.svg",
+      "faces": 58
+    },
+    {
+      "kind": "waterValve",
+      "preview": "furniture/waterValve.svg",
+      "faces": 80
+    },
+    {
+      "kind": "manifold",
+      "preview": "furniture/manifold.svg",
+      "faces": 480
+    },
+    {
+      "kind": "downlight",
+      "preview": "furniture/downlight.svg",
+      "faces": 104
+    },
+    {
+      "kind": "spotlight",
+      "preview": "furniture/spotlight.svg",
+      "faces": 81
+    },
+    {
+      "kind": "ledStripController",
+      "preview": "furniture/ledStripController.svg",
+      "faces": 90
+    },
+    {
+      "kind": "wallLight",
+      "preview": "furniture/wallLight.svg",
+      "faces": 53
+    },
+    {
+      "kind": "pendantLight",
+      "preview": "furniture/pendantLight.svg",
+      "faces": 103
+    },
+    {
+      "kind": "linearLight",
+      "preview": "furniture/linearLight.svg",
+      "faces": 18
+    },
+    {
+      "kind": "router",
+      "preview": "furniture/router.svg",
+      "faces": 140
+    },
+    {
+      "kind": "wirelessAP",
+      "preview": "furniture/wirelessAP.svg",
+      "faces": 70
+    },
+    {
+      "kind": "radiator",
+      "preview": "furniture/radiator.svg",
+      "faces": 146
+    },
+    {
+      "kind": "freshAirVent",
+      "preview": "furniture/freshAirVent.svg",
+      "faces": 66
+    },
+    {
+      "kind": "exhaustFan",
+      "preview": "furniture/exhaustFan.svg",
+      "faces": 77
+    },
+    {
+      "kind": "thermostat",
+      "preview": "furniture/thermostat.svg",
+      "faces": 54
+    },
+    {
+      "kind": "smokeDetector",
+      "preview": "furniture/smokeDetector.svg",
+      "faces": 82
+    },
+    {
+      "kind": "smartPanel",
+      "preview": "furniture/smartPanel.svg",
+      "faces": 66
+    },
+    {
+      "kind": "doorbell",
+      "preview": "furniture/doorbell.svg",
+      "faces": 106
+    }
+  ]
+}

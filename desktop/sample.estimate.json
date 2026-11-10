@@ -1,0 +1,95 @@
+{
+  "format": "cn-estimate",
+  "version": 1,
+  "name": "城南办公楼 · 材料报价示例",
+  "client": "示例客户",
+  "region": "广州市",
+  "date": "2026-11-07",
+  "labor": "0",
+  "freight": "800",
+  "other_fee": "200",
+  "tax_rate": "9",
+  "note": "示例价格仅用于演示，请根据项目实际信息价调整。报价有效期 7 天。",
+  "resources": [
+    {
+      "code": "R1",
+      "description": "螺纹钢 HRB400E Φ20",
+      "unit": "吨",
+      "rate": "3520",
+      "vat": "0",
+      "discount": "0",
+      "category": "钢材"
+    },
+    {
+      "code": "R2",
+      "description": "普通硅酸盐水泥 P.O 42.5",
+      "unit": "吨",
+      "rate": "415",
+      "vat": "0",
+      "discount": "0",
+      "category": "水泥"
+    },
+    {
+      "code": "R3",
+      "description": "搬运人工",
+      "unit": "工日",
+      "rate": "280",
+      "vat": "0",
+      "discount": "0",
+      "category": "人工"
+    }
+  ],
+  "items": [
+    {
+      "code": "Q1",
+      "description": "螺纹钢 HRB400E Φ20",
+      "unit": "吨",
+      "qty": "12.5",
+      "rate": "3520",
+      "loss_rate": "2",
+      "analysis": [],
+      "measurements": [],
+      "price_source": "示例信息价",
+      "remarks": ""
+    },
+    {
+      "code": "Q2",
+      "description": "水泥采购及搬运",
+      "unit": "吨",
+      "qty": "20",
+      "rate": "443",
+      "loss_rate": "0",
+      "analysis": [
+        {
+          "itemtype": 0,
+          "description": "材料与人工",
+          "resource_list": [
+            [
+              "R2",
+              "1",
+              ""
+            ],
+            [
+              "R3",
+              "0.1",
+              ""
+            ]
+          ],
+          "code": ""
+        },
+        {
+          "itemtype": 1,
+          "description": "合计"
+        },
+        {
+          "itemtype": 4,
+          "description": "单价",
+          "value": 2
+        }
+      ],
+      "measurements": [],
+      "remarks": "材料和搬运人工已组价"
+    }
+  ],
+  "saved_at": "2026-11-07T15:05:13"
+}
